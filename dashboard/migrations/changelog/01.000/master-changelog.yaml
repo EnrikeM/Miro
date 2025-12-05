@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - include:
+      relativeToChangelogFile: true
+      file: db-changelog-01.000.01-create-dashboards.sql
+  - include:
+      relativeToChangelogFile: true
+      file: db-changelog-01.000.02-create-dashboard-roles.sql
+  - include:
+      relativeToChangelogFile: true
+      file: db-changelog-01.000.03-create-stickers.sql
