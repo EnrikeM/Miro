@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+п»їusing Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
@@ -10,20 +10,20 @@ using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Конфигурация JWT
+// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey не настроен");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey РЅРµ РЅР°СЃС‚СЂРѕРµРЅ");
 var issuer = jwtSettings["Issuer"] ?? "AuthService";
 var audience = jwtSettings["Audience"] ?? "AuthServiceUsers";
 
-// Добавляем DbContext
+// Р”РѕР±Р°РІР»СЏРµРј DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Добавляем сервисы
+// Р”РѕР±Р°РІР»СЏРµРј СЃРµСЂРІРёСЃС‹
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Настройка JWT аутентификации
+// РќР°СЃС‚СЂРѕР№РєР° JWT Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -47,7 +47,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Auth Service API",
         Version = "v1",
-        Description = "API для регистрации, аутентификации и авторизации пользователей с использованием JWT токенов",
+        Description = "API РґР»СЏ СЂРµРіРёСЃС‚СЂР°С†РёРё, Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё Рё Р°РІС‚РѕСЂРёР·Р°С†РёРё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј JWT С‚РѕРєРµРЅРѕРІ",
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = "Auth Service",
@@ -86,13 +86,13 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth API V1");
-    c.RoutePrefix = string.Empty; // Swagger будет на корневом URL
+    c.RoutePrefix = string.Empty; // Swagger Р±СѓРґРµС‚ РЅР° РєРѕСЂРЅРµРІРѕРј URL
 });
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Регистрация
+// Р РµРіРёСЃС‚СЂР°С†РёСЏ
 app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthService authService) =>
 {
     var result = await authService.RegisterAsync(request.Email, request.Password);
@@ -100,14 +100,14 @@ app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthService a
     if (!result.Success)
         return Results.BadRequest(new { error = result.ErrorMessage });
 
-    return Results.Ok(new { message = "Пользователь успешно зарегистрирован", userId = result.UserId });
+    return Results.Ok(new { message = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ", userId = result.UserId });
 })
 .WithName("Register")
 .WithTags("Authentication")
-.WithSummary("Регистрация нового пользователя")
-.WithDescription("Создает нового пользователя с указанным email и паролем. Пароль хранится в захэшированном виде.");
+.WithSummary("Р РµРіРёСЃС‚СЂР°С†РёСЏ РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ")
+.WithDescription("РЎРѕР·РґР°РµС‚ РЅРѕРІРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ СѓРєР°Р·Р°РЅРЅС‹Рј email Рё РїР°СЂРѕР»РµРј. РџР°СЂРѕР»СЊ С…СЂР°РЅРёС‚СЃСЏ РІ Р·Р°С…СЌС€РёСЂРѕРІР°РЅРЅРѕРј РІРёРґРµ.");
 
-// Логин
+// Р›РѕРіРёРЅ
 app.MapPost("/api/auth/login", async (LoginRequest request, IAuthService authService) =>
 {
     var result = await authService.LoginAsync(request.Email, request.Password);
@@ -119,28 +119,28 @@ app.MapPost("/api/auth/login", async (LoginRequest request, IAuthService authSer
 })
 .WithName("Login")
 .WithTags("Authentication")
-.WithSummary("Вход пользователя в систему")
-.WithDescription("Аутентифицирует пользователя и возвращает JWT токен, действительный в течение 24 часов.");
+.WithSummary("Р’С…РѕРґ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ СЃРёСЃС‚РµРјСѓ")
+.WithDescription("РђСѓС‚РµРЅС‚РёС„РёС†РёСЂСѓРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РІРѕР·РІСЂР°С‰Р°РµС‚ JWT С‚РѕРєРµРЅ, РґРµР№СЃС‚РІРёС‚РµР»СЊРЅС‹Р№ РІ С‚РµС‡РµРЅРёРµ 24 С‡Р°СЃРѕРІ.");
 
 app.Run();
 
-// Модели
+// РњРѕРґРµР»Рё
 public record RegisterRequest(
-    [property: Required(ErrorMessage = "Email обязателен")]
-    [property: EmailAddress(ErrorMessage = "Некорректный формат email")]
+    [property: Required(ErrorMessage = "Email РѕР±СЏР·Р°С‚РµР»РµРЅ")]
+    [property: EmailAddress(ErrorMessage = "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ email")]
     string Email,
 
-    [property: Required(ErrorMessage = "Пароль обязателен")]
-    [property: MinLength(6, ErrorMessage = "Пароль должен содержать минимум 6 символов")]
+    [property: Required(ErrorMessage = "РџР°СЂРѕР»СЊ РѕР±СЏР·Р°С‚РµР»РµРЅ")]
+    [property: MinLength(6, ErrorMessage = "РџР°СЂРѕР»СЊ РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ РјРёРЅРёРјСѓРј 6 СЃРёРјРІРѕР»РѕРІ")]
     string Password
 );
 
 public record LoginRequest(
-    [property: Required(ErrorMessage = "Email обязателен")]
-    [property: EmailAddress(ErrorMessage = "Некорректный формат email")]
+    [property: Required(ErrorMessage = "Email РѕР±СЏР·Р°С‚РµР»РµРЅ")]
+    [property: EmailAddress(ErrorMessage = "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ email")]
     string Email,
 
-    [property: Required(ErrorMessage = "Пароль обязателен")]
+    [property: Required(ErrorMessage = "РџР°СЂРѕР»СЊ РѕР±СЏР·Р°С‚РµР»РµРЅ")]
     string Password
 );
 
@@ -180,14 +180,14 @@ public class AppDbContext : DbContext
     }
 }
 
-// Интерфейс сервиса
+// РРЅС‚РµСЂС„РµР№СЃ СЃРµСЂРІРёСЃР°
 public interface IAuthService
 {
     Task<AuthResult> RegisterAsync(string email, string password);
     Task<LoginResult> LoginAsync(string email, string password);
 }
 
-// Результаты операций
+// Р РµР·СѓР»СЊС‚Р°С‚С‹ РѕРїРµСЂР°С†РёР№
 public class AuthResult
 {
     public bool Success { get; set; }
@@ -202,7 +202,7 @@ public class LoginResult
     public DateTime? ExpiresAt { get; set; }
 }
 
-// Реализация сервиса
+// Р РµР°Р»РёР·Р°С†РёСЏ СЃРµСЂРІРёСЃР°
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
@@ -216,22 +216,22 @@ public class AuthService : IAuthService
 
     public async Task<AuthResult> RegisterAsync(string email, string password)
     {
-        // Валидация email
+        // Р’Р°Р»РёРґР°С†РёСЏ email
         if (!IsValidEmail(email))
-            return new AuthResult { Success = false, ErrorMessage = "Некорректный формат email" };
+            return new AuthResult { Success = false, ErrorMessage = "РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ email" };
 
-        // Валидация пароля
+        // Р’Р°Р»РёРґР°С†РёСЏ РїР°СЂРѕР»СЏ
         if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
-            return new AuthResult { Success = false, ErrorMessage = "Пароль должен содержать минимум 6 символов" };
+            return new AuthResult { Success = false, ErrorMessage = "РџР°СЂРѕР»СЊ РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ РјРёРЅРёРјСѓРј 6 СЃРёРјРІРѕР»РѕРІ" };
 
-        // Проверка существования пользователя
+        // РџСЂРѕРІРµСЂРєР° СЃСѓС‰РµСЃС‚РІРѕРІР°РЅРёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
         if (await _context.Users.AnyAsync(u => u.Email == email.ToLower()))
-            return new AuthResult { Success = false, ErrorMessage = "Пользователь с таким email уже существует" };
+            return new AuthResult { Success = false, ErrorMessage = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј email СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" };
 
-        // Хэширование пароля
+        // РҐСЌС€РёСЂРѕРІР°РЅРёРµ РїР°СЂРѕР»СЏ
         var passwordHash = HashPassword(password);
 
-        // Создание пользователя
+        // РЎРѕР·РґР°РЅРёРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -283,7 +283,7 @@ public class AuthService : IAuthService
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey не настроен");
+        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey РЅРµ РЅР°СЃС‚СЂРѕРµРЅ");
         var issuer = jwtSettings["Issuer"] ?? "AuthService";
         var audience = jwtSettings["Audience"] ?? "AuthServiceUsers";
 
