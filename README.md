@@ -17,7 +17,7 @@
 - FastAPI приложение с CORS, Swagger доступен на `/docs`.
 - Авторизация через заголовок `Authorization: Bearer <token>`, проверка пользователей и ролей.
 - Поддерживает CRUD досок, управление участниками (creator/editor/viewer) и работу со стикерами.
-- Хранит данные в памяти (класс `State`), удобно для демонстрации и автотестов.
+- Хранит данные в PostgreSQL (async SQLAlchemy + Alembic миграции).
 
 ### Auth Server (порт 5001, база на 1433)
 - ASP.NET Core Minimal API с JWT (секрет и издатель задаются через переменные окружения).
@@ -28,15 +28,22 @@
 ```bash
 docker-compose up --build
 ```
+Перед запуском скопируйте файл переменных окружения для dashboard:
+```bash
+cp dashboard/.env.example dashboard/.env
+```
+
 Доступ после запуска:
 - Фронтенд: http://localhost
 - Dashboard API: http://localhost:8080 (Swagger: http://localhost:8080/docs)
 - Auth Server: http://localhost:5001
+- PostgreSQL: порт 5442 (volume `postgres-data`).
 - SQL Server: порт 1433 (volume `sqlserver-data`).
 
 Переменные окружения:
 - `VITE_API_URL` — адрес API для фронтенда (передаётся в билд Vite).
 - `ConnectionStrings__DefaultConnection` и `JwtSettings__*` — конфигурация Auth Server (см. `docker-compose.yml`).
+- `DB__URL` — DSN PostgreSQL для сервиса dashboard (по умолчанию `postgresql+asyncpg://postgres:postgres@postgres:5432/boards`).
 
 ## Локальная разработка без Docker
 - Frontend: `npm install && npm run dev` (см. `frontend/README.md`).

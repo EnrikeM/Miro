@@ -5,7 +5,25 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: uvicorn main:app --host 0.0.0.0 --port 8080
+    command: sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8080"
     ports:
       - "8080:8080"
+    environment:
+      - DB__URL=${DB__URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/boards}
+    depends_on:
+      - postgres
     restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: boards
+    ports:
+      - "5442:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

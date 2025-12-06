@@ -17,11 +17,16 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Запуск с Docker Compose
+## Запуск с Docker Compose (PostgreSQL)
 
 ```bash
-# Соберите и запустите сервис
+# Создайте файл окружения с DSN до postgres контейнера
+cp .env.example .env
+
+# Соберите и запустите сервис + базу
 docker compose up --build
 ```
 
-Приложение будет доступно на http://localhost:8080 (Swagger UI: http://localhost:8080/docs).
+В процессе старта выполняются Alembic миграции (`alembic upgrade head`).
+
+Доступ к API: http://localhost:8080 (Swagger UI: http://localhost:8080/docs).
