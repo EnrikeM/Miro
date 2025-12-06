@@ -12,3 +12,8 @@ class BoardMember(BaseModel):
 
 class UpdateRoleRequest(BaseModel):
     role: EditableRoleEnum
+
+
+class InviteRequest(BaseModel):
+    email: str
+    role: EditableRoleEnum

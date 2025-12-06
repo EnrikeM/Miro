@@ -24,6 +24,8 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8080
     ports:
       - "8080:8080"
+    environment:
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:4173,http://localhost:3000,http://localhost,http://127.0.0.1
     restart: unless-stopped
 
   authserver:

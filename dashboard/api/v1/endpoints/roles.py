@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from core.security import get_current_user
 from models.user_role import UserRole
-from schema.role import BoardMember, UpdateRoleRequest
+from schema.role import BoardMember, InviteRequest, UpdateRoleRequest
 from services.state import state
 from .dashboards import _get_board_or_404, _require_member
 
@@ -24,6 +24,29 @@ async def update_member_role(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
     board["members"][user_id] = data.role
     return BoardMember(user_id=user_id, role=data.role)
+
+
+@router.post("/{board_id}/invite", status_code=status.HTTP_201_CREATED)
+async def invite_user(
+    board_id: str,
+    data: InviteRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    board = _get_board_or_404(board_id)
+    role = _require_member(board, current_user["id"])
+
+    if role != UserRole.CREATOR:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Только creator может приглашать")
+
+    user = state.get_user_by_email(data.email)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь с таким email не найден")
+
+    if user["id"] == current_user["id"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Нельзя пригласить самого себя")
+
+    state.set_member_role(board_id, user["id"], data.role)
+    return {"message": "Пользователь приглашен"}
 
 
 @router.delete("/{board_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -311,11 +311,6 @@ export const Board: React.FC = () => {
         }
     };
 
-    const handleShare = () => {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Ссылка на доску скопирована в буфер обмена');
-    };
-
     const [showInvite, setShowInvite] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
@@ -329,9 +324,7 @@ export const Board: React.FC = () => {
             setInviteEmail('');
         } catch (err) {
             console.error(err);
-            alert(
-                'Не удалось пригласить пользователя. Пользователь должен иметь аккаунт с этим email.',
-            );
+            alert('Не удалось пригласить пользователя');
         }
     };
 
@@ -519,12 +512,6 @@ export const Board: React.FC = () => {
                                 className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/20"
                             >
                                 Пригласить
-                            </button>
-                            <button
-                                onClick={handleShare}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'dark' ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                            >
-                                Поделиться ссылкой
                             </button>
                         </>
                     )}
