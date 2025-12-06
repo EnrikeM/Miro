@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  frontend:
+    platform: linux/amd64
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "80:80"
+    depends_on:
+      - dashboard
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    command: uvicorn main:app --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  authserver:
+    build:
+      context: ./AuthServer/AuthServer
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Server=sqlserver;Database=AuthServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      JwtSettings__SecretKey: 417ade868311a033a49979c3d4b46e3e
+      JwtSettings__Issuer: AuthService
+      JwtSettings__Audience: AuthServiceUsers
+    ports:
+      - "5001:80"
+    depends_on:
+      - sqlserver
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: YourStrong@Passw0rd
+      MSSQL_PID: Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  sqlserver-data:
