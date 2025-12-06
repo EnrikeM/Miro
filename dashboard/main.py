@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.v1.endpoints import auth, dashboards, roles, stickers
 
@@ -11,6 +12,22 @@ app = FastAPI(
     ),
 )
 
+# --- CORS ---
+origins = [
+    "http://localhost:3000",  
+    "http://localhost:5173",  # фронтенд до билда
+    "http://localhost:4173"   # фронтенд после билда
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,            
+    allow_credentials=True,          
+    allow_methods=["*"],             
+    allow_headers=["*"],              
+)
+
+# --- ROUTERS ---
 app.include_router(auth.router)
 app.include_router(dashboards.router)
 app.include_router(roles.router)
