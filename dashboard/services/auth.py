@@ -1,21 +1,25 @@
+import base64
+import jwt
 import re
 import hashlib
-import base64
+import status
 import uuid
 
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel, SecuritySchemeType, APIKey
 from fastapi.openapi.utils import get_openapi
-from pydantic import BaseModel, ValidationError
-from jose import JWTError, jwt
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+# from jwt.exceptions import JWTError
+from pydantic import BaseModel, ValidationError, EmailStr, Field
+from sqlalchemy import create_engine, Column, String, DateTime
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from typing import List, Optional
 import uvicorn
 from uuid import UUID, uuid4
-from datetime import datetime, timedelta
+from passlib.context import CryptContext
+from pydantic import constr
 
 # Configuration (replace with your actual config loading)
 class Settings:
@@ -104,7 +108,7 @@ def verify_token(token: str = Depends(oauth2_scheme)):
         )
         # You can add more validation or user loading here
         return payload
-    except JWTError:
+    except Exception:
         raise credentials_exception
 
 # Example route that requires authentication
@@ -126,7 +130,7 @@ Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(pgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
