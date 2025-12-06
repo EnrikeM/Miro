@@ -26,4 +26,8 @@ export const boardApi = {
     ): Promise<void> => {
         await apiClient.post(`/boards/${dashboardId}/invite`, { email, role });
     },
+
+    deleteBoard: async (id: string): Promise<void> => {
+        await apiClient.delete(`/boards/${id}`);
+    },
 };

@@ -64,6 +64,21 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    const handleDeleteBoard = async (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Вы уверены, что хотите удалить эту доску? Это действие нельзя отменить'))
+            return;
+
+        try {
+            await boardApi.deleteBoard(id);
+            setBoards(boards.filter((b) => b.id !== id));
+        } catch (error) {
+            console.error('Failed to delete board', error);
+            setErrorMsg('Не удалось удалить доску');
+        }
+    };
+
     return (
         <div
             className={`min-h-screen font-sans p-8 transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-gray-100 text-gray-900'}`}
@@ -110,17 +125,42 @@ export const Dashboard: React.FC = () => {
                         <div className="col-span-3 text-gray-500">Загрузка...</div>
                     ) : (
                         boards.map((board) => (
-                            <Link
+                            <div
                                 key={board.id}
-                                to={`/board/${board.id}`}
-                                className={`aspect-video border rounded-xl p-6 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-xl ${theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:border-purple-300 shadow-sm'}`}
+                                className={`relative group aspect-video border rounded-xl p-6 flex flex-col justify-between transition-all hover:-translate-y-1 hover:shadow-xl ${theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-gray-200 hover:border-purple-300 shadow-sm'}`}
                             >
+                                <Link to={`/board/${board.id}`} className="absolute inset-0" />
                                 <div>
-                                    <h3
-                                        className={`text-xl font-semibold mb-2 truncate ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
-                                    >
-                                        {board.name}
-                                    </h3>
+                                    <div className="flex justify-between items-start">
+                                        <h3
+                                            className={`text-xl font-semibold mb-2 truncate max-w-[80%] ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
+                                        >
+                                            {board.name}
+                                        </h3>
+                                        {board.role === 'creator' && (
+                                            <button
+                                                onClick={(e) => handleDeleteBoard(e, board.id)}
+                                                className={`opacity-0 group-hover:opacity-100 p-2 rounded-full transition-all z-10 ${theme === 'dark' ? 'text-red-400 hover:bg-red-500/20' : 'text-red-500 hover:bg-red-100'}`}
+                                                title="Удалить доску"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                >
+                                                    <path d="M3 6h18" />
+                                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                     <span
                                         className={`text-xs px-2 py-1 rounded capitalize ${theme === 'dark' ? 'bg-white/10 text-gray-400' : 'bg-gray-100 text-gray-600'}`}
                                     >
@@ -128,7 +168,7 @@ export const Dashboard: React.FC = () => {
                                     </span>
                                 </div>
                                 <div className="text-xs text-gray-500 mt-4">Открыть →</div>
-                            </Link>
+                            </div>
                         ))
                     )}
                 </div>
