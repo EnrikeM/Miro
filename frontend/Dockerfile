@@ -1,5 +1,6 @@
 # Stage 1: build the Vite application
-FROM node:20-alpine AS build
+# Use a glibc-based image to avoid missing optional native rollup dependencies on musl.
+FROM node:20-slim AS build
 WORKDIR /app
 
 # Install dependencies
