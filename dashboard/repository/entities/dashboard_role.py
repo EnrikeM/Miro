@@ -1,9 +1,9 @@
 import uuid
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import Enum
 
 from . import BaseModel
 from ...models.user_role import UserRole
@@ -20,4 +20,4 @@ class DashboardRole(BaseModel):
         PG_UUID(as_uuid=True),
         primary_key=True
     )
-    user_role: Mapped[UserRole] = mapped_column(nullable=False)
+    user_role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role_enum"), nullable=False)
