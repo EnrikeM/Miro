@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  authserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthServiceDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - JwtSettings__SecretKey=417ade868311a033a49979c3d4b46e3e
+      - JwtSettings__Issuer=AuthService
+      - JwtSettings__Audience=AuthServiceUsers
+    depends_on:
+      - sqlserver
+    networks:
+      - auth-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - auth-network
+
+volumes:
+  sqlserver-data:
+
+networks:
+  auth-network:
+    driver: bridge
