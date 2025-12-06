@@ -16,3 +16,12 @@ source venv/bin/activate
 # Установите зависимости
 pip install -r requirements.txt
 ```
+
+## Запуск с Docker Compose
+
+```bash
+# Соберите и запустите сервис
+docker compose up --build
+```
+
+Приложение будет доступно на http://localhost:8080 (Swagger UI: http://localhost:8080/docs).
