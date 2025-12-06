@@ -13,7 +13,7 @@ export const ResetPassword: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        // TODO: Implement actual API call
+        // MOCK realisation
         setTimeout(() => {
             setLoading(false);
             setSubmitted(true);

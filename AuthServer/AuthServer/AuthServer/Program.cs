@@ -106,6 +106,8 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // Swagger будет на корневом URL
 });
 
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -8,8 +8,8 @@ from api.v1.endpoints import auth, dashboards, roles, stickers
 # Load .env
 load_dotenv()
 
-# Get allowed CORS origins from .env
-origins = os.getenv("CORS_ORIGINS", "").split(",")
+raw_origins = os.getenv("CORS_ORIGINS", "")
+origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
 app = FastAPI(
     title="Cockreate Boards & Stickers API",

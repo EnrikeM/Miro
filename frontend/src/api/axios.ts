@@ -1,7 +1,5 @@
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
-import { setupMocks } from './mock';
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const apiClient = axios.create({
@@ -11,8 +9,10 @@ export const apiClient = axios.create({
     },
 });
 
+// authClient removed - now using unified apiClient
+
 // TODO: delete after adding real api
-setupMocks(apiClient);
+// setupMocks(apiClient);
 
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {

@@ -29,15 +29,26 @@ export const Board: React.FC = () => {
     const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
     const [interaction, setInteraction] = useState<{
-        type: 'none' | 'drag' | 'resize' | 'create';
+        type: 'none' | 'drag' | 'resize' | 'create' | 'pan';
         id: string | null;
         handle?: string;
         start: { x: number; y: number };
         initial: { x: number; y: number; w: number; h: number };
     }>({ type: 'none', id: null, start: { x: 0, y: 0 }, initial: { x: 0, y: 0, w: 0, h: 0 } });
 
+    const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1 });
     const isEditor = board?.role === 'editor';
     const isViewer = board?.role === 'viewer';
+
+    const screenToBoard = (clientX: number, clientY: number) => {
+        const canvas = document.getElementById('canvas');
+        if (!canvas) return { x: 0, y: 0 };
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (clientX - rect.left - viewport.x) / viewport.scale,
+            y: (clientY - rect.top - viewport.y) / viewport.scale,
+        };
+    };
 
     const loadBoard = useCallback(
         async (boardId: string) => {
@@ -108,18 +119,49 @@ export const Board: React.FC = () => {
         [isViewer, selectedId],
     );
 
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const zoomSensitivity = 0.001;
+            const delta = -e.deltaY * zoomSensitivity;
+            const newScale = Math.min(Math.max(0.1, viewport.scale + delta), 5);
+            const canvas = e.currentTarget.getBoundingClientRect();
+            const mouseX = e.clientX - canvas.left;
+            const mouseY = e.clientY - canvas.top;
+            const newX = mouseX - ((mouseX - viewport.x) / viewport.scale) * newScale;
+            const newY = mouseY - ((mouseY - viewport.y) / viewport.scale) * newScale;
+
+            setViewport({ x: newX, y: newY, scale: newScale });
+        } else {
+            setViewport((prev) => ({
+                ...prev,
+                x: prev.x - e.deltaX,
+                y: prev.y - e.deltaY,
+            }));
+        }
+    };
+
     const handleCanvasMouseDown = (e: React.MouseEvent) => {
+        if (e.button === 1) {
+            e.preventDefault();
+            setInteraction({
+                type: 'pan',
+                id: null,
+                start: { x: e.clientX, y: e.clientY },
+                initial: { x: viewport.x, y: viewport.y, w: 0, h: 0 },
+            });
+            return;
+        }
+
         if (activeTool === 'sticker' && !isViewer) {
-            const canvasRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            const startX = e.clientX - canvasRect.left;
-            const startY = e.clientY - canvasRect.top;
+            const { x, y } = screenToBoard(e.clientX, e.clientY);
 
             const tempId = 'creating-' + Date.now();
             const newSticker = {
                 id: tempId,
                 dashboard_id: id!,
-                x: startX,
-                y: startY,
+                x: x,
+                y: y,
                 width: 0,
                 height: 0,
                 text: '',
@@ -130,7 +172,7 @@ export const Board: React.FC = () => {
                 type: 'create',
                 id: tempId,
                 start: { x: e.clientX, y: e.clientY },
-                initial: { x: startX, y: startY, w: 0, h: 0 },
+                initial: { x, y, w: 0, h: 0 },
             });
         } else {
             setSelectedId(null);
@@ -169,8 +211,8 @@ export const Board: React.FC = () => {
         const { type, id: moveId, start, initial, handle } = interaction;
         if (type === 'none' || !moveId) return;
 
-        const deltaX = e.clientX - start.x;
-        const deltaY = e.clientY - start.y;
+        const deltaX = (e.clientX - start.x) / viewport.scale;
+        const deltaY = (e.clientY - start.y) / viewport.scale;
 
         if (type === 'drag') {
             setStickers((prev) =>
@@ -178,6 +220,15 @@ export const Board: React.FC = () => {
                     s.id === moveId ? { ...s, x: initial.x + deltaX, y: initial.y + deltaY } : s,
                 ),
             );
+        } else if (type === 'pan') {
+            const screenDeltaX = e.clientX - start.x;
+            const screenDeltaY = e.clientY - start.y;
+
+            setViewport((prev) => ({
+                ...prev,
+                x: initial.x + screenDeltaX,
+                y: initial.y + screenDeltaY,
+            }));
         } else if (type === 'create') {
             const w = Math.abs(deltaX);
             const h = Math.abs(deltaY);
@@ -260,11 +311,6 @@ export const Board: React.FC = () => {
         }
     };
 
-    const handleShare = () => {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Ссылка на доску скопирована в буфер обмена');
-    };
-
     const [showInvite, setShowInvite] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
@@ -278,9 +324,7 @@ export const Board: React.FC = () => {
             setInviteEmail('');
         } catch (err) {
             console.error(err);
-            alert(
-                'Не удалось пригласить пользователя. Пользователь должен иметь аккаунт с этим email.',
-            );
+            alert('Не удалось пригласить пользователя');
         }
     };
 
@@ -301,24 +345,37 @@ export const Board: React.FC = () => {
                 handleDelete(selectedId);
             }
         };
+
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
     }, [selectedId, stickers, isViewer, handleDelete]);
+
+    const getCursorClass = () => {
+        if (interaction.type === 'pan') return 'cursor-grabbing';
+        if (activeTool === 'cursor') return 'cursor-default';
+        return 'cursor-crosshair';
+    };
 
     return (
         <div
             id="canvas"
-            className={`w-full h-screen overflow-hidden relative ${activeTool === 'cursor' ? 'cursor-default' : 'cursor-crosshair'} transition-colors duration-300 ${theme === 'dark' ? 'bg-[#1a1a2e]' : 'bg-gray-100'} board-grid`}
+            className={`w-full h-screen overflow-hidden relative transition-colors duration-300 ${
+                theme === 'dark' ? 'bg-[#1a1a2e]' : 'bg-gray-100'
+            } board-grid ${getCursorClass()}`}
             style={{
                 backgroundImage:
                     theme === 'dark'
                         ? 'radial-gradient(#6b7280 0.5px, transparent 1px)'
                         : 'radial-gradient(#9ca3af 0.5px, transparent 1px)',
-                backgroundSize: '35px 35px',
+                backgroundSize: `${35 * viewport.scale}px ${35 * viewport.scale}px`,
+                backgroundPosition: `${viewport.x}px ${viewport.y}px`,
             }}
             onMouseDown={handleCanvasMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onWheel={handleWheel}
         >
             <div
                 className={`absolute top-0 left-0 right-0 h-16 backdrop-blur-md shadow-sm flex items-center px-4 z-50 justify-between border-b pointer-events-none transition-colors duration-300 ${theme === 'dark' ? 'bg-black/60 border-white/10 text-white' : 'bg-white/80 border-gray-200 text-gray-800'}`}
@@ -338,14 +395,13 @@ export const Board: React.FC = () => {
                     >
                         {board?.name || 'Загрузка...'}
                     </h1>
-                    {isViewer ||
-                        (isEditor && (
-                            <span
-                                className={`text-xs px-2 py-1 rounded-full uppercase font-bold tracking-wider ${theme === 'dark' ? 'bg-white/20 text-gray-300' : 'bg-gray-200 text-gray-600'}`}
-                            >
-                                {isViewer ? 'режим чтения' : 'режим редактирования'}
-                            </span>
-                        ))}
+                    {(isViewer || isEditor) && (
+                        <span
+                            className={`text-xs px-2 py-1 rounded-full uppercase font-bold tracking-wider ${theme === 'dark' ? 'bg-white/20 text-gray-300' : 'bg-gray-200 text-gray-600'}`}
+                        >
+                            {isViewer ? 'режим чтения' : 'режим редактирования'}
+                        </span>
+                    )}
                 </div>
 
                 {board && !isViewer && (
@@ -457,33 +513,34 @@ export const Board: React.FC = () => {
                             >
                                 Пригласить
                             </button>
-                            <button
-                                onClick={handleShare}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === 'dark' ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                            >
-                                Поделиться ссылкой
-                            </button>
                         </>
                     )}
                 </div>
             </div>
 
-            {stickers.map((sticker) => (
-                <Sticker
-                    key={sticker.id}
-                    data={sticker}
-                    isSelected={selectedId === sticker.id}
-                    onSelect={(id) => {
-                        setSelectedId(id);
-                        if (!isViewer) setSelectedColor(sticker.color);
-                    }}
-                    onUpdate={(id, updates) => updateSticker(id, updates)}
-                    onDelete={handleDelete}
-                    onMouseDown={handleStickerMouseDown}
-                    onResizeStart={handleResizeStart}
-                    readOnly={isViewer}
-                />
-            ))}
+            <div
+                className="w-full h-full origin-top-left"
+                style={{
+                    transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.scale})`,
+                }}
+            >
+                {stickers.map((sticker) => (
+                    <Sticker
+                        key={sticker.id}
+                        data={sticker}
+                        isSelected={selectedId === sticker.id}
+                        onSelect={(id) => {
+                            setSelectedId(id);
+                            if (!isViewer) setSelectedColor(sticker.color);
+                        }}
+                        onUpdate={(id, updates) => updateSticker(id, updates)}
+                        onDelete={handleDelete}
+                        onMouseDown={handleStickerMouseDown}
+                        onResizeStart={handleResizeStart}
+                        readOnly={isViewer}
+                    />
+                ))}
+            </div>
 
             {showInvite && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -544,6 +601,61 @@ export const Board: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <div
+                className={`fixed bottom-4 right-4 flex flex-col gap-2 rounded-lg shadow-lg border p-1 z-50 transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+            >
+                <button
+                    onClick={() =>
+                        setViewport((prev) => ({ ...prev, scale: Math.min(prev.scale + 0.1, 5) }))
+                    }
+                    className={`p-2 rounded-md transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Zoom In"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <button
+                    onClick={() => setViewport({ x: 0, y: 0, scale: 1 })}
+                    className={`p-2 text-xs font-bold rounded-md transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Reset Zoom"
+                >
+                    {Math.round(viewport.scale * 100)}%
+                </button>
+                <button
+                    onClick={() =>
+                        setViewport((prev) => ({ ...prev, scale: Math.max(prev.scale - 0.1, 0.1) }))
+                    }
+                    className={`p-2 rounded-md transition-colors ${theme === 'dark' ? 'text-gray-300 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}
+                    title="Zoom Out"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
     );
 };

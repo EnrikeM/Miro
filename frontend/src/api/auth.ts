@@ -8,7 +8,10 @@ export const authApi = {
     },
 
     signin: async (email: string, password: string): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>('/signin', { email, password });
+        const response = await apiClient.post<AuthResponse>('/signin', {
+            email,
+            password,
+        });
         return response.data;
     },
 };

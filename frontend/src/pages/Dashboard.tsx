@@ -28,10 +28,11 @@ export const Dashboard: React.FC = () => {
             setErrorMsg(location.state.error);
             const timer = setTimeout(() => {
                 setErrorMsg(null);
+                navigate(location.pathname, { replace: true, state: {} });
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [location.state]);
+    }, [location.state, navigate, location.pathname]);
 
     useEffect(() => {
         loadBoards();

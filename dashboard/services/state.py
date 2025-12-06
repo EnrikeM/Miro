@@ -35,6 +35,9 @@ class State:
     def get_user_by_token(self, token: str) -> Optional[dict]:
         return self.tokens.get(token)
 
+    def get_user_by_email(self, email: str) -> Optional[dict]:
+        return self.users.get(email)
+
     # -----------------
     # BOARDS
     # -----------------
